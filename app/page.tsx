@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { Suspense, useState, useRef, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { format as formatSQL } from "sql-formatter";
 import ClarificationCard from "@/components/ClarificationCard";
@@ -124,7 +124,7 @@ const EXAMPLE_QUERIES = [
 
 // ── Page ──
 
-export default function Home() {
+function HomeContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -440,5 +440,13 @@ export default function Home() {
       </div>
     </main>
     </Tooltip.Provider>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-zinc-950 text-zinc-100" />}>
+      <HomeContent />
+    </Suspense>
   );
 }
