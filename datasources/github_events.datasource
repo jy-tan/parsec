@@ -1,0 +1,16 @@
+SCHEMA >
+    `id` UInt64 `json:$.id`,
+    `type` LowCardinality(String) `json:$.type`,
+    `actor_login` LowCardinality(String) `json:$.actor_login`,
+    `repo_name` LowCardinality(String) `json:$.repo_name`,
+    `created_at` DateTime `json:$.created_at`,
+    `action` LowCardinality(String) `json:$.action`,
+    `number` UInt32 `json:$.number`,
+    `title` String `json:$.title`,
+    `body` String `json:$.body`,
+    `ref` LowCardinality(String) `json:$.ref`,
+    `is_private` UInt8 `json:$.is_private`
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(created_at)"
+ENGINE_SORTING_KEY "type, repo_name, created_at"
