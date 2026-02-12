@@ -68,29 +68,37 @@ export function buildGrammar(schema: TableSchema): string {
   const { stringCols, numericCols, dateTimeCols, enumCols, allCols } =
     classifyColumns(schema);
 
-  // Build column_ref as the union of all queryable column types
+  // Build column_ref as the union of all queryable column types,
+  // including enum column names derived from the schema.
+  const enumColNames = enumCols.map((e) => e.name);
   const allColumnRef = [
     ...stringCols,
     ...numericCols,
     ...dateTimeCols,
-    // Include enum/special columns in column_ref too
-    "type",
-    "action",
-    "created_at",
+    ...enumColNames,
   ];
-  // Deduplicate
+  // Deduplicate (a column could appear in multiple lists, e.g. created_at)
   const uniqueColumnRef = [...new Set(allColumnRef.filter((c) => allCols.includes(c)))];
 
   // Get event types from schema or fallback
   const eventTypes =
     enumCols.find((e) => e.name === "type")?.values ?? [...KNOWN_EVENT_TYPES];
 
+  // Action values are hardcoded because the `action` column is typed as
+  // LowCardinality(String) in ClickHouse, not an Enum — so there are no
+  // introspectable enum values. These are GH Archive domain conventions.
+  // To make this generic, we'd need a `SELECT DISTINCT action` discovery query.
   const actionValues = [...KNOWN_ACTION_VALUES];
 
   // Perform template substitutions
   let grammar = GRAMMAR_TEMPLATE;
 
   grammar = grammar.replace("{{TABLE_NAME}}", schema.tableName);
+
+  // Fallback values ensure the Lark grammar never has an empty alternative
+  // (which would be a syntax error). These are only hit if the schema has
+  // zero columns of that type, which shouldn't happen with github_events
+  // but guards against malformed schemas.
   grammar = grammar.replace(
     "{{STRING_COLS}}",
     stringCols.length > 0 ? toLarkAlternatives(stringCols) : '"actor_login"'
