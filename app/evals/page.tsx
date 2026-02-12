@@ -32,28 +32,28 @@ const CATEGORY_META: Record<
   },
   semantic: {
     label: "Semantic Correctness",
-    level: "Model",
+    level: "Pipeline",
     color: "text-emerald-400",
-    tip: "Accuracy — does GPT-5 generate correct SQL for natural language queries? Runs full pipeline end-to-end. Requires dev server + OpenAI.",
+    tip: "Accuracy — does the full NL → CFG → SQL → execution pipeline produce correct results? End-to-end. Requires dev server + OpenAI + ClickHouse.",
   },
   degradation: {
     label: "Graceful Degradation",
     level: "Model",
     color: "text-violet-400",
-    tip: "Accuracy — does the intent classifier correctly route ambiguous, impossible, and out-of-scope queries? Requires dev server + OpenAI.",
+    tip: "Accuracy — does the intent classifier correctly route ambiguous, impossible, and out-of-scope queries? Requires OpenAI.",
   },
   adequacy: {
     label: "Response Adequacy",
     level: "Model",
     color: "text-rose-400",
-    tip: "Accuracy — does the LLM result-checker correctly identify when SQL results do or don't answer the user's question? Requires OpenAI only.",
+    tip: "Accuracy — does the LLM result-checker correctly identify when SQL results do or don't answer the user's question? Requires OpenAI.",
   },
 };
 
 const ALL_CATEGORIES: EvalCategory[] = [
+  "semantic",
   "grammar-coverage",
   "grammar-safety",
-  "semantic",
   "degradation",
   "adequacy",
 ];
@@ -121,23 +121,66 @@ export default function EvalsPage() {
             </span>
           </h1>
           <p className="mt-2 text-sm text-zinc-500">
-            Grammar coverage, safety, semantic correctness, graceful
-            degradation, and response adequacy evaluations.
+            Pipeline, grammar, and model-level evaluations for correctness,
+            safety, and robustness.
           </p>
         </div>
 
         {/* ── Category selector ─────────────────────────── */}
         <Tooltip.Provider delayDuration={250}>
           <div className="mb-6 flex flex-col gap-5">
+            {/* Pipeline-level (end-to-end) */}
+            <div className="flex items-start gap-4">
+              <div className="w-24 shrink-0 pt-1.5">
+                <span className="text-xs font-medium uppercase tracking-widest text-zinc-400">
+                  Pipeline
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {(["semantic"] as EvalCategory[]).map((cat) => {
+                  const meta = CATEGORY_META[cat];
+                  const active = selectedCategories.includes(cat);
+                  return (
+                    <Tooltip.Root key={cat}>
+                      <Tooltip.Trigger asChild>
+                        <button
+                          onClick={() => toggleCategory(cat)}
+                          className={`rounded border px-3 py-1.5 text-xs tracking-wide transition-colors cursor-pointer ${
+                            active
+                              ? "border-zinc-600 bg-zinc-800 text-zinc-200"
+                              : "border-zinc-800 bg-zinc-900 text-zinc-600"
+                          }`}
+                        >
+                          <span
+                            className={`mr-1.5 inline-block h-1.5 w-1.5 rounded-full ${
+                              active ? "bg-emerald-400" : "bg-zinc-700"
+                            }`}
+                          />
+                          {meta.label}
+                        </button>
+                      </Tooltip.Trigger>
+                      <Tooltip.Portal>
+                        <Tooltip.Content
+                          side="bottom"
+                          sideOffset={6}
+                          className="z-50 max-w-xs rounded-md border border-zinc-800/60 bg-zinc-900/95 px-2.5 py-1.5 text-[11px] leading-snug text-zinc-400 shadow-lg backdrop-blur-sm animate-fade-in"
+                        >
+                          {meta.tip}
+                          <Tooltip.Arrow className="fill-zinc-900/95" />
+                        </Tooltip.Content>
+                      </Tooltip.Portal>
+                    </Tooltip.Root>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Grammar-level (deterministic) */}
             <div className="flex items-start gap-4">
               <div className="w-24 shrink-0 pt-1.5">
                 <span className="text-xs font-medium uppercase tracking-widest text-zinc-400">
                   Grammar
                 </span>
-                <p className="mt-0.5 text-[10px] text-zinc-600">
-                  deterministic
-                </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {(["grammar-coverage", "grammar-safety"] as EvalCategory[]).map((cat) => {
@@ -178,18 +221,15 @@ export default function EvalsPage() {
               </div>
             </div>
 
-            {/* Model-level (LLM, async) */}
+            {/* Model-level (LLM component tests) */}
             <div className="flex items-start gap-4">
               <div className="w-24 shrink-0 pt-1.5">
                 <span className="text-xs font-medium uppercase tracking-widest text-zinc-400">
                   Model
                 </span>
-                <p className="mt-0.5 text-[10px] text-zinc-600">
-                  requires server
-                </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                {(["semantic", "degradation", "adequacy"] as EvalCategory[]).map((cat) => {
+                {(["degradation", "adequacy"] as EvalCategory[]).map((cat) => {
                   const meta = CATEGORY_META[cat];
                   const active = selectedCategories.includes(cat);
                   return (
@@ -441,8 +481,8 @@ export default function EvalsPage() {
               <code className="text-emerald-400/80">npm run evals</code>
             </p>
             <p className="mt-1 text-xs text-zinc-600">
-              Grammar-level evals are deterministic and fast. Model-level evals
-              require a running dev server, ClickHouse, and OpenAI API key.
+              Grammar evals are deterministic and fast. Pipeline evals require
+              dev server + OpenAI + ClickHouse. Model evals require OpenAI only.
             </p>
           </div>
         )}

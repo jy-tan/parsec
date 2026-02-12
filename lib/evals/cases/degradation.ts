@@ -114,4 +114,30 @@ export const DEGRADATION_CASES: DegradationCase[] = [
     expectedBehavior: "ANSWERABLE",
     reasoning: "Informal but clear intent - should map to activity count",
   },
+
+  // ANSWERABLE: clear positive cases (should never be flagged as ambiguous/impossible)
+  {
+    id: "positive_top_repos_push",
+    description: "Clear top-N query with event type filter",
+    nlQuery: "top 10 repos by push events last week",
+    expectedBehavior: "ANSWERABLE",
+    reasoning:
+      "Straightforward ranking query with known column (repo_name), event type (PushEvent), and time filter",
+  },
+  {
+    id: "positive_issues_opened",
+    description: "Count query with event type and time range",
+    nlQuery: "how many issues were opened yesterday",
+    expectedBehavior: "ANSWERABLE",
+    reasoning:
+      "Clear aggregation: count IssuesEvent with action='opened' over a date range",
+  },
+  {
+    id: "positive_technical_event_name",
+    description: "Query using exact event type name",
+    nlQuery: "show me hourly PullRequestEvent counts",
+    expectedBehavior: "ANSWERABLE",
+    reasoning:
+      "Uses a technical event type name directly — still a valid, unambiguous data query",
+  },
 ];
